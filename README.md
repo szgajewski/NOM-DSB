@@ -1,0 +1,4 @@
+NOM-DSB
+=======
+
+praca magisterska
