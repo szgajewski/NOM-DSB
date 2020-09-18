@@ -10,6 +10,9 @@ from urllib.parse import urlparse, parse_qs
 #from NOM_GPIO import * #import function from another file, this is the way to serve GPIO!
 import lib_NOM as LIB
 import time
+from dicttoxml import dicttoxml
+import json
+import I2C_LCD_driver as LCD
 
 parse_dict = {"abc":"111", "God":"is"}
 
@@ -24,11 +27,50 @@ class S(BaseHTTPRequestHandler):
         self._set_response()
         sciezka = str(self.path)
         parseGET = GETparser(sciezka)
-        temp = LIB.analogTemperature(0)
-        #outputCheckStatus(14)
-        self.wfile.write("GOD IS GOOD!\nGET request for {}\nTemperature is: %.2f".format(parseGET).encode('utf-8') % temp)
-        time.sleep(2)
-        self.wfile.write("Second Message".encode("utf-8"))
+        operationMode = str(parseGET.get("operation"))[2:-2]
+        print(operationMode)
+        
+        
+        if operationMode == "getAll":
+         LCD_operationMode(operationMode)
+         allData = json.dumps(LIB.getAllData())
+        elif operationMode == "getByName":
+         byName = str(parseGET.get("eqName"))[2:-2]
+         LCD_operationMode("%s:%s" % (operationMode,byName))
+         rep = []
+         rep.append(LIB.getByName(byName))
+         allData = json.dumps(rep)
+        elif operationMode == "setByName":
+         byName = str(parseGET.get("eqName"))[2:-2]
+         byName_val = str(parseGET.get("eqVal"))[2:-2]
+         LCD_operationMode("%s:%s" % (operationMode,byName))
+         rep = []
+         rep.append(LIB.setByName(byName,byName_val))
+         allData = json.dumps(rep)
+        elif operationMode =="DecisionSystem":
+         LCD_operationMode("%s" % (operationMode))
+         db_rules = str(parseGET.get("selection"))[2:-2]
+         db_rules
+         db_json = db_rules.strip('}][{').split('}, ')
+         db_query = []
+         for x in db_json:
+             db_temp = {}
+             for y in x.split(','):
+                z = y.split('=')
+                db_temp[str.strip(z[0]).replace("{","")] = str.strip(z[1]).replace("{","")
+             db_query.append(db_temp)   
+         reply = []
+         for t in db_query:
+             instrument = t["instrument_name"]
+             upLimit = t["upper_limit"]
+             loLimit = t["lower_limit"]
+             regulator = t["regulator_name"]
+             upRule = t["upper_rule"]
+             loRule = t["lower_rule"]
+             reply = reply + (LIB.DecisionSystem(instrument, upLimit, loLimit, regulator, upRule, loRule))
+         allData = json.dumps(reply)
+        print("SENDED DATA: \n%s" % allData) 
+        self.wfile.write("{}".format(allData).encode('utf-8'))
 
     def do_HEADER(self):
         logging.info("HEADER request: %s", str(self.headers))
@@ -45,14 +87,13 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
 def GETparser(path):
-    #logging.info("jestem w GETparser")
     parse_dict = parse_qs(urlparse(path).query)
-    #checkStatus(2)
-    for key in parse_dict:
-        print(key,"->",parse_dict[key])
+    #for key in parse_dict:
+    #   print(key,"->",parse_dict[key])
     return parse_dict
 
 def run(server_class=HTTPServer, handler_class=S, port=8081):
+    intro()
     logging.basicConfig(level=logging.INFO)
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
@@ -64,6 +105,21 @@ def run(server_class=HTTPServer, handler_class=S, port=8081):
         pass
     httpd.server_close()
     logging.info('Stopping httpd...\n')
+
+def intro():
+    LIB.bip(0.1,2,0.1)
+    time.sleep(0.5)
+    LIB.bip(0.1,2,0.1)
+    time.sleep(0.5)
+    LIB.bip(0.1,2,0.1)
+    return True
+
+def LCD_operationMode(mode):
+    mylcd = LCD.lcd()
+    stringTime = time.strftime("%H:%M:%S", time.localtime())
+    mylcd.lcd_display_string(mode,1)
+    mylcd.lcd_display_string(stringTime,2)
+    return True
 
 if __name__ == '__main__':
     from sys import argv

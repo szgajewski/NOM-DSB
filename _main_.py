@@ -65,7 +65,9 @@ def func4():
 # time.sleep(1)
 # print(LIB.RG_led(0))
 # print(LIB.allData())
- print(LIB.getAllData(step_motor_angle))
+# print(LIB.getAllData())
+# print(LIB.setByName("FAN_02",1))
+ print(LIB.DecisionSystem("TT_03", 28, 27, "FAN_01", 1, 0))
  print("end func4")
 
 if __name__=='__main__':

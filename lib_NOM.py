@@ -5,7 +5,7 @@ from w1thermsensor import W1ThermSensor
 from retrying import retry
 from bmp180 import read_bmp180
 import analogInputs
-from servoMoto import setServoAngle
+#from servoMoto import setServoAngle
 from multiprocessing import Process, Pool
 
 GPIO.setwarnings(False)
@@ -43,7 +43,7 @@ GPIO.setup(HeaterPIN, GPIO.OUT)
 
 # FANS
 fan1PIN = 13
-fan2PIN = 17
+fan2PIN = 10
 GPIO.setup(fan1PIN, GPIO.OUT)
 GPIO.setup(fan2PIN, GPIO.OUT)
 
@@ -54,9 +54,9 @@ GPIO.setup(fan2PIN, GPIO.OUT)
 #GPIO.setup(bip2PIN, GPIO.OUT)
 
 # motors
-ST_motor = 16
-DC_motor = 1
-GPIO.setup(ST_motor, GPIO.OUT)
+#ST_motor = 16
+DC_motor = 12
+#GPIO.setup(ST_motor, GPIO.OUT)
 GPIO.setup(DC_motor, GPIO.OUT)
 
 # 1wire therm sensors
@@ -103,7 +103,7 @@ def get_1wire_temp():
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_1wire_temp_byID(id):
- temp = W1ThermSensor(W1ThermSensor.THERM_SENSOR_DS18B20, id).get_temperature()
+ temp = round(W1ThermSensor(W1ThermSensor.THERM_SENSOR_DS18B20, id).get_temperature(),2)
  #print("Sensor: %s, temp: %.2f C" % (id, temp))
  return temp
 
@@ -119,7 +119,7 @@ def analogPotentiometer(inputNo):
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def analogTemperature(inputNo):
  inputVal = analogInputs.analogInput().readAnalogInput(inputNo)
- analogVal = inputVal*3.3/10.24 #scale: (val * voltage / resolution)*100
+ analogVal = round(inputVal*3.3/10.24,2) #scale: (val * voltage / resolution)*100
  return analogVal
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
@@ -130,25 +130,25 @@ def LightSensor(inputNo):
  elif inputVal > 1000:
   lightPercentage = 100
  else:
-  lightPercentage = ((inputVal - 300) * 100) / (1000-300) # -300: this is minimum value, /500: resolution
+  lightPercentage = round(((inputVal - 300) * 100) / (1000-300),2) # -300: this is minimum value, /500: resolution
  return lightPercentage
 
-@retry(stop_max_attempt_number=3, wait_fixed=1000)
-def WaterSensor(inputNo):
- inputVal = analogInputs.analogInput().readAnalogInput(inputNo)
- if inputVal < 200:
-  output = "DRY: %s" % inputVal
- elif inputVal < 400:
-  output = "WET: %s" % inputVal
- elif inputVal < 600:
-  output = "LOW LEVEL: %s" % inputVal
- elif inputVal < 850:
-  output = "MID LEVEL: %s" % inputVal
- elif inputVal < 1000:
-  output = "HIGH LEVEL: %s" % inputVal
- else:
-  output = "ALERT! %s" % inputVal
- return output
+#@retry(stop_max_attempt_number=3, wait_fixed=1000)
+#def WaterSensor(inputNo):
+# inputVal = analogInputs.analogInput().readAnalogInput(inputNo)
+# if inputVal < 200:
+#  output = "DRY: %s" % inputVal
+# elif inputVal < 400:
+#  output = "WET: %s" % inputVal
+# elif inputVal < 600:
+#  output = "LOW LEVEL: %s" % inputVal
+# elif inputVal < 850:
+#  output = "MID LEVEL: %s" % inputVal
+# elif inputVal < 1000:
+#  output = "HIGH LEVEL: %s" % inputVal
+# else:
+#  output = "ALERT! %s" % inputVal
+# return output
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def analogDigitalInputs(inputNo):
@@ -276,35 +276,35 @@ def bmp180_temp_pressure():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def bmp180_temp():
  bmpTemp, bmpPress = read_bmp180()
- return bmpTemp
+ return round(bmpTemp,2)
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def bmp180_pressure():
  bmpTemp, bmpPress = read_bmp180()
- return bmpPress
+ return round(bmpPress,2)
 
-class ST_MOTOR:
- angle = 0 # degree
- def __init__(self):
-  #self.angle = 90
-  setServoAngle(self.angle)
+#class ST_MOTOR:
+# angle = 0 # degree
+# def __init__(self):
+#  #self.angle = 90
+#  setServoAngle(self.angle)
 
 # def __del__(self):
 #  self.angle = 0
 #  setServoAngle(0)
 
- def getAngle(self):
-  return self.angle
+# def getAngle(self):
+#  return self.angle
+#
+# def setAngle(self,ang):
+#  if ang > 90 or ang < - 90:
+#   return self.angle
+#  else:
+#   self.angle = ang
+#   setServoAngle(ang)
+#   return self.angle
 
- def setAngle(self,ang):
-  if ang > 90 or ang < - 90:
-   return self.angle
-  else:
-   self.angle = ang
-   setServoAngle(ang)
-   return self.angle
-
-mainSTmotor = ST_MOTOR()
+#mainSTmotor = ST_MOTOR()
 #mainSTmotor.setAngle(45)
 
 #@retry(stop_max_attempt_number=5, wait_fixed=1000)
@@ -318,6 +318,7 @@ def get_PIR_01():
  PIR_01 = {}
  try:
   PIR_01 = { #
+   "name": "PIR_01",
    "value":analogDigitalInputs(2),
    "measure_date":time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())}
  except Exception as e:
@@ -327,6 +328,7 @@ def get_PIR_01():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_TT_01():
  TT_01 = { #
+  "name": "TT_01",
   "value":analogTemperature(0),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return TT_01
@@ -334,6 +336,7 @@ def get_TT_01():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_TT_02():
  TT_02 = { #
+  "name": "TT_02",
   "value":get_1wire_temp_byID("012018c0e6c0"),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return TT_02
@@ -341,6 +344,7 @@ def get_TT_02():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_TT_03():
  TT_03 = { #
+  "name": "TT_03",
   "value":get_1wire_temp_byID("00000964ab6a"),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return TT_03
@@ -348,6 +352,7 @@ def get_TT_03():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_TT_04():
  TT_04 = { #
+  "name": "TT_04",
   "value":get_1wire_temp_byID("3c01b556c86a"),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return TT_04
@@ -355,6 +360,7 @@ def get_TT_04():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_TT_05():
  TT_05 = { #
+  "name": "TT_05",
   "value":bmp180_temp(),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return TT_05
@@ -362,6 +368,7 @@ def get_TT_05():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_POT_01():
  POT_01 = { #
+  "name": "POT_01",
   "value":analogPotentiometer(1),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return POT_01
@@ -369,6 +376,7 @@ def get_POT_01():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_POT_02():
  POT_02 = { #
+  "name": "POT_02",
   "value":analogPotentiometer(6),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return POT_02
@@ -376,6 +384,7 @@ def get_POT_02():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_LS_01():
  LS_01 = { #
+  "name": "LS_01",
   "value":LightSensor(7),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return LS_01
@@ -383,6 +392,7 @@ def get_LS_01():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_DS_01():
  DS_01 = { #
+  "name": "DS_01",
   "value":analogDigitalInputs(4),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return DS_01
@@ -390,20 +400,23 @@ def get_DS_01():
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_DS_02():
  DS_02 = { #
+  "name": "DS_02",
   "value":analogDigitalInputs(5),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return DS_02
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
-def get_BT_01():
- BT_01 = { #
+def get_SW_01():
+ SW_01 = { #
+  "name": "SW_01",
   "value":analogDigitalInputs(3),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
- return BT_01
+ return SW_01
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_PT_01():
  PT_01 = { #
+  "name": "PT_01",
   "value":bmp180_pressure(),
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return PT_01
@@ -411,178 +424,314 @@ def get_PT_01():
  # outputs
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_FAN_01():
+ if GPIO.input(fan1PIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  FAN_01 = { #
-  "value":GPIO.input(fan1PIN),
+  "name": "FAN_01",
+  "value":sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return FAN_01
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def set_FAN_01(newStatus):
  GPIO.output(fan1PIN,newStatus)
+ if GPIO.input(fan1PIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  FAN_01 = {
-  "value": GPIO.input(fan1PIN),
+  "name": "FAN_01",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) }
  return FAN_01
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_FAN_02():
+ if GPIO.input(fan2PIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  FAN_02 = { #
-  "value":GPIO.input(fan2PIN),
+  "name": "FAN_02",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return FAN_02
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def set_FAN_02(newStatus):
  GPIO.output(fan2PIN,newStatus)
+ if GPIO.input(fan2PIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  FAN_02 = {
-  "value": GPIO.input(fan2PIN),
+  "name": "FAN_02",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return FAN_02
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_BIP_01():
+ if GPIO.input(BUZZER)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  BIP_01 = { #
-  "value":GPIO.input(BUZZER),
+  "name": "BIP_01",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return BIP_01
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
-def set_BIP_01(duration_of_impulse, no_of_repeats, pause_between):
- bip(duration_of_impulse, no_of_repeats, pause_between) #seconds, int, seconds
+def set_BIP_01(newStatus):
+ GPIO.output(BUZZER,newStatus)
+ if GPIO.input(BUZZER)=="1":
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  BIP_01 = {
- "value":GPIO.input(BUZZER),
- "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
+  "name": "BIP_01",
+  "value": sValue,
+  "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return BIP_01
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_BIP_02():
+ if GPIO.input(alarmPIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  BIP_02 = { #
-  "value":GPIO.input(alarmPIN),
+  "name": "BIP_02",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return BIP_02
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
-def set_BIP_02(_duration):
- alarmLoud(_duration)
+def set_BIP_02(newStatus):
+ GPIO.output(alarmPIN,newStatus)
+ if GPIO.input(alarmPIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  BIP_02 = { #
-  "value":GPIO.input(alarmPIN),
+  "name": "BIP_02",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return BIP_02
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_LED_RG():
+ if GPIO.input(RG_red)==1:
+  sValue = "RED"
+ elif GPIO.input(RG_green)==1:
+  sValue = "GREEN"
+ else:
+  sValue = "OFF"
  LED_RG = { #
-  "value":{"red":GPIO.input(RG_red), "green":GPIO.input(RG_green)},
+  "name": "LED_RG",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return LED_RG
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def set_LED_RG(_color):
  RG_led(_color)
+ if GPIO.input(RG_red)==1:
+  sValue = "RED"
+ elif GPIO.input(RG_green)==1:
+  sValue = "GREEN"
+ else:
+  sValue = "OFF"
  LED_RG = { #
-  "value":{"red":GPIO.input(RG_red), "green":GPIO.input(RG_green)},
+  "name": "LED_RG",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return LED_RG
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_LED_RGB():
+ if GPIO.input(RED)==1:
+  sValue = "RED"
+ elif GPIO.input(GREEN)==1:
+  sValue = "GREEN"
+ elif GPIO.input(BLUE)==1:
+  sValue = "BLUE"
+ else:
+  sValue = "OFF"
  LED_RGB = { #
-  "value":{"red":GPIO.input(RED), "green":GPIO.input(GREEN),"blue":GPIO.input(BLUE)},
+  "name": "LED_RGB",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return LED_RGB
 
 def set_LED_RGB(_color):
  rgb(_color)
+ if GPIO.input(RED)==1:
+  sValue = "RED"
+ elif GPIO.input(GREEN)==1:
+  sValue = "GREEN"
+ elif GPIO.input(BLUE)==1:
+  sValue = "BLUE"
+ else:
+  sValue = "OFF"
  LED_RGB = { #
-  "value":{"red":GPIO.input(RED), "green":GPIO.input(GREEN),"blue":GPIO.input(BLUE)},
+  "name": "LED_RGB",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return LED_RGB
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_LED_Y():
+ if GPIO.input(Y_led)==1:
+  sValue = "YELLOW"
+ else:
+  sValue = "OFF"
  LED_Y = { #
-  "value":GPIO.input(Y_led),
+  "name": "LED_Y",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return LED_Y
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def set_LED_Y(_status):
  GPIO.output(Y_led,_status)
+ if GPIO.input(Y_led)==1:
+  sValue = "YELLOW"
+ else:
+  sValue = "OFF"
  LED_Y = { #
-  "value":GPIO.input(Y_led),
+  "name": "LED_Y",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return LED_Y
 
-@retry(stop_max_attempt_number=3, wait_fixed=1000)
-def get_ST_MOT():
- ST_MOT = { #
-  "value":mainSTmotor.getAngle(),
-  "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
- return ST_MOT
+#@retry(stop_max_attempt_number=3, wait_fixed=1000)
+#def get_ST_MOT():
+# ST_MOT = { #
+#  "name": "ST_MOT",
+#  "value":mainSTmotor.getAngle(),
+#  "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
+# return ST_MOT
 
-@retry(stop_max_attempt_number=3, wait_fixed=1000)
-def set_ST_MOT(_angle):
- mainSTmotor.setAngle(_angle)
- ST_MOT = { #
-  "value":mainSTmotor.getAngle(),
-  "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
- return ST_MOT
+#@retry(stop_max_attempt_number=3, wait_fixed=1000)
+#def set_ST_MOT(_angle):
+# mainSTmotor.setAngle(_angle)
+# ST_MOT = { #
+#  "name": "ST_MOT",
+#  "value":mainSTmotor.getAngle(),
+#  "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
+# return ST_MOT
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def get_DC_MOT():
+ if GPIO.input(DC_motor)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  DC_MOT = { #
-  "value":GPIO.input(DC_motor),
+  "name": "DC_MOT",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return DC_MOT
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
 def set_DC_MOT(_status):
- DCmotor(_status)
+ GPIO.output(DC_motor,_status)
+ #DCmotor(_status)
+ print("set DC_MOT to : %s" % _status)
+ if GPIO.input(DC_motor)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
  DC_MOT = { #
-  "value":GPIO.input(DC_motor),
+  "name": "DC_MOT",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
  return DC_MOT
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
-def get_HT_01():
- HT_01 = { #
-  "value":GPIO.input(HeaterPIN),
+def get_HF_01():
+ if GPIO.input(HeaterPIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
+ HF_01 = { #
+  "name": "HF_01",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
- return HT_01
+ return HF_01
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
-def set_HT_01(_status):
- heater(_status)
- HT_01 = { #
-  "value":GPIO.input(HeaterPIN),
+def set_HF_01(_status):
+ #heater(_status)
+ GPIO.output(HeaterPIN,_status)
+ if GPIO.input(HeaterPIN)==1:
+  sValue = "ON"
+ else:
+  sValue = "OFF"
+ HF_01 = { #
+  "name": "HF_01",
+  "value": sValue,
   "measure_date":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
- return HT_01
+ return HF_01
 
 @retry(stop_max_attempt_number=3, wait_fixed=1000)
-def getAllData(st_motor):
- report = {}
- report = {
-  "PIR_01": get_PIR_01(),
-  "TT_01": get_TT_01(),
-  "TT_02": get_TT_02(),
-  "TT_03": get_TT_03(),
-  "TT_04": get_TT_04(),
-  "TT_05": get_TT_05(),
-  "POT_01": get_POT_01(),
-  "POT_02": get_POT_02(),
-  "LS_01": get_LS_01(),
-  "DS_01": get_DS_01(),
-  "DS_02": get_DS_02(),
-  "BT_01": get_BT_01(),
-  "PT_01": get_PT_01(),
-  "FAN_01": set_FAN_01(1),
-  "FAN_02": set_FAN_02(0),
-  "BIP_01": get_BIP_01(),
-  "BIP_02": get_BIP_02(),
-  "LED_RG": get_LED_RG(),
-  "LED_RGB": get_LED_RGB(),
-  "LED_Y": set_LED_Y(0),
-  "ST_MOT": set_ST_MOT(st_motor),
-  "DC_MOT": get_DC_MOT(),
-  "HT_01": get_HT_01()}
+def getAllData():
+ report = []
+ report.append(get_PIR_01())
+ report.append(get_TT_01())
+ report.append(get_TT_02())
+ report.append(get_TT_03())
+ report.append(get_TT_04())
+ report.append(get_TT_05())
+ report.append(get_POT_01())
+ report.append(get_POT_02())
+ report.append(get_LS_01())
+ report.append(get_DS_01())
+ report.append(get_DS_02())
+ report.append(get_SW_01())
+ report.append(get_PT_01())
+ report.append(get_FAN_01())
+ report.append(get_FAN_02())
+ report.append(get_BIP_01())
+ report.append(get_BIP_02())
+ report.append(get_LED_RG())
+ report.append(get_LED_RGB())
+ report.append(get_LED_Y())
+ #report.append(get_ST_MOT())
+ report.append(get_DC_MOT())
+ report.append(get_HF_01())
  return report
+
+@retry(stop_max_attempt_number=3, wait_fixed=1000)
+def getByName(byName):
+ func = "get_"+byName
+ result = globals()[str(func)]()
+ return result
+
+@retry(stop_max_attempt_number=3, wait_fixed=1000)
+def setByName(byName,newVal):
+ func = "set_"+byName
+ if str(newVal).isnumeric():
+  result = globals()[str(func)](int(newVal))
+ else:
+  result = globals()[str(func)](newVal)
+ print("Name: %s; new value: %s" % (byName,newVal))
+ #print(result)
+ return result
+
+@retry(stop_max_attempt_number=3, wait_fixed=1000)
+def DecisionSystem(instrument, upLimit, loLimit, regulator, upRule, loRule):
+ result = []
+ instr = getByName(instrument)
+ insValue = instr.get("value")
+ regValue = getByName(regulator).get("value")
+ result.append(instr)
+ if float(insValue) > float(upLimit):
+  result.append(setByName(regulator,upRule)) 
+ elif float(insValue) < float(loLimit):
+  result.append(setByName(regulator,loRule))
+ return result
