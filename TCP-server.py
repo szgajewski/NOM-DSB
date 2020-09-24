@@ -23,14 +23,13 @@ class S(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        allData = ""
         logging.info("GET request,\nPath: %s\nHeaders:\n%s", str(self.path), str(self.headers))
         self._set_response()
         sciezka = str(self.path)
         parseGET = GETparser(sciezka)
         operationMode = str(parseGET.get("operation"))[2:-2]
         print(operationMode)
-        
-        
         if operationMode == "getAll":
          LCD_operationMode(operationMode)
          allData = json.dumps(LIB.getAllData())
@@ -50,7 +49,6 @@ class S(BaseHTTPRequestHandler):
         elif operationMode =="DecisionSystem":
          LCD_operationMode("%s" % (operationMode))
          db_rules = str(parseGET.get("selection"))[2:-2]
-         db_rules
          db_json = db_rules.strip('}][{').split('}, ')
          db_query = []
          for x in db_json:
