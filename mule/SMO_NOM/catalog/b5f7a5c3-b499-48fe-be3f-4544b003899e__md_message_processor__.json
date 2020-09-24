@@ -1,0 +1,16 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "flowVal"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "flowVal"
+        }
+    },
+    "id": "b5f7a5c3-b499-48fe-be3f-4544b003899e",
+    "version": "5.2.0.0"
+}

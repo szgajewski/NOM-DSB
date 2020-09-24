@@ -1,0 +1,26 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "flowVal"
+        }
+    },
+    "outputMessageMetadata": {
+        "flowVariables": {
+            "varName": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "flowVal"
+            },
+            "varValue": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "flowVal"
+            },
+            "varDate": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "flowVal"
+            }
+        }
+    },
+    "id": "efccb9a6-5d3c-4c74-aa21-48096096c319",
+    "version": "5.2.0.0"
+}
